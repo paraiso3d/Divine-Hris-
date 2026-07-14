@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class JobPosting extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'title',
+        'department_id',
+        'work_type',
+        'employment_type',
+        'location',
+        'salary_range',
+        'description',
+        'status',
+        'posted_date',
+        'deadline_date',
+        'is_archived',
+    ];
+
+    // Relationships
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id'); // adjust if your column is named differently
+    }
+
+
+    public function jobPosting()
+    {
+        return $this->belongsTo(JobPosting::class);
+    }
+}
