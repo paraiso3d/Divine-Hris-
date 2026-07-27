@@ -87,12 +87,8 @@ class PayrollController extends Controller
                 $start = \Carbon\Carbon::parse($request->cutoff_start_date);
                 $end   = \Carbon\Carbon::parse($request->cutoff_end_date);
 
-                $cutoffDays = 0;
-                for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-                    if (!$date->isWeekend()) {
-                        $cutoffDays++;
-                    }
-                }
+                // Count ALL days including Saturday and Sunday
+                $cutoffDays = $start->diffInDays($end) + 1;
 
                 if ($manualAbs !== null) {
                     $absences = $manualAbs;
