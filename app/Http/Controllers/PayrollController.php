@@ -428,15 +428,10 @@ class PayrollController extends Controller
 
             /*
         |--------------------------------------------------------------------------
-        | 1. Count total weekdays in cutoff (Mon–Fri only)
+        | 1. Count total calendar days in cutoff (including Saturday & Sunday)
         |--------------------------------------------------------------------------
         */
-            $totalWeekdays = 0;
-            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-                if (!$date->isWeekend()) {
-                    $totalWeekdays++;
-                }
-            }
+            $totalDays = $start->diffInDays($end) + 1;
 
             /*
         |--------------------------------------------------------------------------
@@ -476,7 +471,7 @@ class PayrollController extends Controller
         | 4. Map employees with computed days worked & absences
         |--------------------------------------------------------------------------
         */
-            $result = $employees->map(function ($emp) use ($attendanceData, $start, $end, $totalWeekdays) {
+            $result = $employees->map(function ($emp) use ($attendanceData, $start, $end, $totalDays) {
 
                 $daysWorked = 0;
 
@@ -490,16 +485,13 @@ class PayrollController extends Controller
 
                         $carbonDate = Carbon::parse($date);
 
-                        if (
-                            !$carbonDate->isWeekend() &&
-                            $carbonDate->between($start, $end)
-                        ) {
+                        if ($carbonDate->between($start, $end)) {
                             $daysWorked++;
                         }
                     }
                 }
 
-                $absences = max($totalWeekdays - $daysWorked, 0);
+                $absences = max($totalDays - $daysWorked, 0);
 
                 return [
                     'employee_id' => $emp->id,
