@@ -428,10 +428,15 @@ class PayrollController extends Controller
 
             /*
         |--------------------------------------------------------------------------
-        | 1. Count total calendar days in cutoff (including Saturday & Sunday)
+        | 1. Count total working days (Monday-Saturday, exclude Sunday)
         |--------------------------------------------------------------------------
         */
-            $totalDays = $start->diffInDays($end) + 1;
+            $totalDays = 0;
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                if (!$date->isSunday()) {
+                    $totalDays++;
+                }
+            }
 
             /*
         |--------------------------------------------------------------------------
@@ -450,7 +455,7 @@ class PayrollController extends Controller
 
             /*
         |--------------------------------------------------------------------------
-        | 3. Get all attendance within cutoff (single query)
+        | 3. Get attendance records within cutoff
         |--------------------------------------------------------------------------
         */
             $attendanceData = DB::table('attendances')
@@ -468,7 +473,7 @@ class PayrollController extends Controller
 
             /*
         |--------------------------------------------------------------------------
-        | 4. Map employees with computed days worked & absences
+        | 4. Compute days worked & absences
         |--------------------------------------------------------------------------
         */
             $result = $employees->map(function ($emp) use ($attendanceData, $start, $end, $totalDays) {
@@ -485,7 +490,11 @@ class PayrollController extends Controller
 
                         $carbonDate = Carbon::parse($date);
 
-                        if ($carbonDate->between($start, $end)) {
+                        // Count only Monday-Saturday
+                        if (
+                            !$carbonDate->isSunday() &&
+                            $carbonDate->between($start, $end)
+                        ) {
                             $daysWorked++;
                         }
                     }
