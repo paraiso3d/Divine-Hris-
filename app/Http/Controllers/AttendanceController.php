@@ -497,7 +497,7 @@ class AttendanceController extends Controller
         */
             $dateNow = now()->format('Y-m-d H:i:s');
 
-            Mail::to('gimme473@gmail.com')->send(
+            Mail::to('divinepolytechnic.humanresource@gmail.com')->send(
                 new ClockInNotification($employee, $dateNow)
             );
 
@@ -611,7 +611,7 @@ class AttendanceController extends Controller
             }
 
             // Send EOD email
-            Mail::to('hello@snlvirtualpartner.com')
+            Mail::to('divinepolytechnic.humanresource@gmail.com')
                 ->cc($ccEmails)
                 ->send(new EndOfDayReportMail($subject, $reportBody));
 
