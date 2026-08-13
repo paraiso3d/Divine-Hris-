@@ -87,8 +87,12 @@ class PayrollController extends Controller
                 $start = \Carbon\Carbon::parse($request->cutoff_start_date);
                 $end   = \Carbon\Carbon::parse($request->cutoff_end_date);
 
-                // Count ALL days including Saturday and Sunday
-                $cutoffDays = $start->diffInDays($end) + 1;
+                $cutoffDays = 0;
+                for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                    if (!$date->isWeekend()) {
+                        $cutoffDays++;
+                    }
+                }
 
                 if ($manualAbs !== null) {
                     $absences = $manualAbs;
@@ -158,11 +162,11 @@ class PayrollController extends Controller
                 foreach ($employeeAllowances as $allowance) {
 
                     // Perfect Attendance Incentive
-                    if (strtolower(trim($allowance->allowance_name)) === 'perfect attendance incentive') {
+                    if (strtolower(trim($allowance->allowance_name)) === 'perfect attendance') {
 
                         // Only give if no absences and no late
                         if ($absences == 0 && !$hasLate) {
-                            $total_allowances += ($allowance->allowance_amount ?? 0) / 2;
+                            $total_allowances += ($allowance->allowance_amount ?? 0);
                         }
 
                         continue;
@@ -298,27 +302,26 @@ class PayrollController extends Controller
 
                 foreach ($employeeAllowances as $allowance) {
 
-                    $amount = ($allowance->allowance_amount ?? 0) / 2;
-
-                    // Perfect Attendance Incentive
-                    if (strtolower(trim($allowance->allowance_name)) === 'perfect attendance incentive') {
+                    // Perfect Attendance (full amount)
+                    if (strtolower(trim($allowance->allowance_name)) === 'perfect attendance') {
 
                         if ($absences == 0 && !$hasLate) {
 
                             PayrollAllowance::create([
                                 'payroll_record_id' => $record->id,
                                 'allowance_type_id' => $allowance->allowance_type_id,
-                                'allowance_amount'  => $amount,
+                                'allowance_amount'  => $allowance->allowance_amount, // FULL AMOUNT
                             ]);
                         }
 
                         continue;
                     }
 
+                    // Other allowances are semi-monthly
                     PayrollAllowance::create([
                         'payroll_record_id' => $record->id,
                         'allowance_type_id' => $allowance->allowance_type_id,
-                        'allowance_amount'  => $amount,
+                        'allowance_amount'  => ($allowance->allowance_amount ?? 0) / 2,
                     ]);
                 }
             }
