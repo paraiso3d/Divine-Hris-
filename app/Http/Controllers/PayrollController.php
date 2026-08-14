@@ -435,6 +435,7 @@ class PayrollController extends Controller
         |--------------------------------------------------------------------------
         */
             $totalDays = 0;
+
             for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
                 if (!$date->isSunday()) {
                     $totalDays++;
@@ -448,7 +449,14 @@ class PayrollController extends Controller
         */
             $employees = Employee::where('is_active', 1)
                 ->where('is_archived', false)
-                ->select('id', 'first_name', 'last_name', 'base_salary', 'position_id', 'department_id')
+                ->select(
+                    'id',
+                    'first_name',
+                    'last_name',
+                    'base_salary',
+                    'position_id',
+                    'department_id'
+                )
                 ->with([
                     'department:id,department_name',
                     'position:id,position_name',
@@ -459,10 +467,11 @@ class PayrollController extends Controller
             /*
         |--------------------------------------------------------------------------
         | 3. Get attendance records within cutoff
+        |    Present AND Late both count as days worked
         |--------------------------------------------------------------------------
         */
             $attendanceData = DB::table('attendances')
-                ->where('status', 'Present')
+                ->whereIn('status', ['Present', 'Late'])
                 ->where(function ($q) use ($start, $end) {
                     $q->whereBetween('clock_in', [$start, $end])
                         ->orWhereBetween('clock_out', [$start, $end]);
@@ -479,7 +488,12 @@ class PayrollController extends Controller
         | 4. Compute days worked & absences
         |--------------------------------------------------------------------------
         */
-            $result = $employees->map(function ($emp) use ($attendanceData, $start, $end, $totalDays) {
+            $result = $employees->map(function ($emp) use (
+                $attendanceData,
+                $start,
+                $end,
+                $totalDays
+            ) {
 
                 $daysWorked = 0;
 
